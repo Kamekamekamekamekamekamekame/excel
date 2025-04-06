@@ -15,7 +15,7 @@
   <button onclick="handleSignoutClick()">ログアウト</button>
   <div id="content"></div>
   <script>
-    const CLIENT_ID = 'YOUR_CLIENT_ID_HERE';
+    const CLIENT_ID = '694225064754-skn0nqqg93l5no40m04bsli1rcf0c98n.apps.googleusercontent.com';
     const API_KEY = 'YOUR_API_KEY_HERE'; // 省略可（使わないなら削除可）
     const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
     const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
