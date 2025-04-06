@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>スプレッドシート編集</title>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <style>
+    table { border-collapse: collapse; }
+    td, th { border: 1px solid #999; padding: 6px; }
+  </style>
+</head>
+<body>
+  <h1>スプレッドシートを表示・編集</h1>
+  <button onclick="handleAuthClick()">ログイン</button>
+  <button onclick="handleSignoutClick()">ログアウト</button>
+  <div id="content"></div>
+  <script>
+    const CLIENT_ID = 'YOUR_CLIENT_ID_HERE';
+    const API_KEY = 'YOUR_API_KEY_HERE'; // 省略可（使わないなら削除可）
+    const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
+    const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+
+    const SPREADSHEET_ID = '1ib2HRjkvhXeyhfPk_-rZwdgH6PJ3E0_ZoJNe1YUJ5FY';
+    const SHEET_NAME = 'シート1';
+
+    let gapiInited = false;
+    let gisInited = false;
+    let tokenClient;
+
+    function gapiLoaded() {
+      gapi.load('client', initializeGapiClient);
+    }
+
+    async function initializeGapiClient() {
+      await gapi.client.init({
+        apiKey: API_KEY,
+        discoveryDocs: [DISCOVERY_DOC],
+      });
+      gapiInited = true;
+    }
+
+    function gisLoaded() {
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: '', // 後で設定
+      });
+      gisInited = true;
+    }
+
+    function handleAuthClick() {
+      tokenClient.callback = async (resp) => {
+        if (resp.error !== undefined) {
+          throw (resp);
+        }
+        await listData();
+      };
+      tokenClient.requestAccessToken({ prompt: 'consent' });
+    }
+
+    function handleSignoutClick() {
+      const token = gapi.client.getToken();
+      if (token !== null) {
+        google.accounts.oauth2.revoke(token.access_token);
+        gapi.client.setToken('');
+        document.getElementById('content').innerHTML = '';
+      }
+    }
+
+    async function listData() {
+      const response = await gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: SHEET_NAME,
+      });
+
+      const values = response.result.values;
+      const table = document.createElement('table');
+      values.forEach((row, rowIndex) => {
+        const tr = document.createElement('tr');
+        row.forEach((cell, colIndex) => {
+          const td = document.createElement('td');
+          const input = document.createElement('input');
+          input.value = cell;
+          input.addEventListener('change', () => {
+            updateCell(rowIndex + 1, colIndex + 1, input.value);
+          });
+          td.appendChild(input);
+          tr.appendChild(td);
+        });
+        table.appendChild(tr);
+      });
+      const contentDiv = document.getElementById('content');
+      contentDiv.innerHTML = '';
+      contentDiv.appendChild(table);
+    }
+
+    async function updateCell(row, col, value) {
+      const range = `${SHEET_NAME}!${String.fromCharCode(64 + col)}${row}`;
+      await gapi.client.sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: range,
+        valueInputOption: 'RAW',
+        resource: { values: [[value]] },
+      });
+      console.log(`更新: ${range} = ${value}`);
+    }
+
+    window.onload = () => {
+      gapiLoaded();
+      gisLoaded();
+    };
+  </script>
+  <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+</body>
+</html>
