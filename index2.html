@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>スプレッドシート操作</title>
+  <style>
+    table { border-collapse: collapse; margin-top: 10px; }
+    td, th { border: 1px solid #ccc; padding: 5px; }
+    input { width: 100px; }
+  </style>
+</head>
+<body>
+  <h1>スプレッドシート データ編集</h1>
+  <button onclick="loadData()">読み込み</button>
+  <button onclick="saveData()">保存</button>
+  <div id="sheetData"></div>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyLvqbz2y9nd5sXn3J12qMFYUqEsioTUIwDQ0MgJfPSz4-5bWCfJv1e0NOmkqlEazA9og/exec'; // 例：https://script.google.com/macros/s/xxx/exec
+
+    let tableData = [];
+
+    async function loadData() {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      tableData = data;
+      drawTable();
+    }
+
+    function drawTable() {
+      const container = document.getElementById('sheetData');
+      container.innerHTML = '';
+
+      const table = document.createElement('table');
+      tableData.forEach((row, i) => {
+        const tr = document.createElement('tr');
+        row.forEach((cell, j) => {
+          const td = document.createElement('td');
+          const input = document.createElement('input');
+          input.value = cell;
+          input.onchange = (e) => {
+            tableData[i][j] = e.target.value;
+          };
+          td.appendChild(input);
+          tr.appendChild(td);
+        });
+        table.appendChild(tr);
+      });
+      container.appendChild(table);
+    }
+
+    async function saveData() {
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify(tableData),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      alert('保存しました！');
+    }
+  </script>
+</body>
+</html>
